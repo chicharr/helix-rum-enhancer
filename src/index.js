@@ -9,7 +9,7 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-const { sampleRUM } = window.hlx.rum;
+const { sampleRUM, rumSessionStorage } = window.hlx.rum;
 
 sampleRUM.baseURL = sampleRUM.baseURL || new URL('https://rum.hlx.page');
 
@@ -77,6 +77,13 @@ sampleRUM.drain('cwv', (() => {
       const data = { cwv: {} };
       data.cwv[measurement.name] = measurement.value;
       sampleRUM('cwv', data);
+      rumSessionStorage.cwv = rumSessionStorage.cwv || {};
+      const { avg, t } = rumSessionStorage.cwv[measurement.name] ? rumSessionStorage.cwv[measurement.name] : { avg: 0, t: 0};
+      const newAvg = ((avg * t) + measurement.value) / (t + 1);
+      rumSessionStorage.cwv[measurement.name] = { avg: newAvg, t: (t + 1) };
+      const aggdata = { cwv: {} };
+      aggdata.cwv[measurement.name] = newAvg;
+      sampleRUM('aggcwv', aggdata);
     };
     // When loading `web-vitals` using a classic script, all the public
     // methods can be found on the `webVitals` global namespace.
